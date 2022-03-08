@@ -1,16 +1,17 @@
 from click import option
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
-from random import randrange #untuk generate id
+from random import randrange 
 """
-simpan data kedlm array
+menyisipkan status kode. misal response ke user adlh data tdk ditemukan (404)
+ini berkaitan dg response jd kita import dulu response
+untuk set status nya kita gunakan status, import dulu
 """
 
 
 app = FastAPI(title="Dokumentasi untuk api")
 
-# berupa array dictionary
 data_store = [{
     "id":1,
     "nama":"no name",
@@ -26,7 +27,7 @@ data_store = [{
 class Post(BaseModel):
     nama: str
     umur: int
-# fungsi ini akan mencari data dr id yg telah ditentukan, nantinya digunakan untuk menampilkan data yg dicari berdsr id
+
 def find_data(id):
     for data in data_store:
         if data["id"] == id:
@@ -40,16 +41,12 @@ async def show():
 @app.post("/createpost2", tags=["create new data group"], summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
 async def createdata2(tangkapdata: Post):
     data_dict = tangkapdata.dict()
-    # generate id
     data_dict['id'] = randrange(0, 1000000)
-    # tambahkan data baru kedlm array dg bantuan append
     data_store.append(data_dict)
     return {
         "data": data_dict
     }
 
-# NOTE JIKA KODE INI DISIMPAN DIAKHIR (STLH showspesific akan error), jd kita simpan sblm itu. USAHAKAN yg ada param url diletakkan terakhir
-# menampilkan data yg terakhir dibuat
 @app.get("/showpost/latest", tags=["create new data group"], summary=["tampilkan hanya data yg terakhir dibuat"], description="menampilkan data yg terakhir dibuat")
 async def showslatestdata():
     data = data_store[len(data_store)-1]
@@ -57,11 +54,28 @@ async def showslatestdata():
         "data latest": data
     }
 
-# show spesifik id
-@app.get("/showpost/{id}", tags=["create new data group"], summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
-# id adalah int jd kalau string akan error
+@app.get("/showpost/codestatuscara1/{id}", tags=["create new data group"], summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
+async def showspesific(id: int, response: Response):
+    data = find_data(id)
+    # cek jika data dg id yg dicari tdk ada beri response dg status 404
+    if not data:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"message":f'data dengan id = {id} tidak ditemukan'}
+        # tp cara diatas "kurang bersih" sehingga kita bisa gunakan cara 2 sprti dibawah ini (kode diatas non aktif dulu) 
+    return{
+        "data with id": data
+    }
+
+@app.get("/showpost/codestatuscara2/{id}", tags=["create new data group"], summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
+# dg cara 2 ini param response: Response dpt dihapus, sehingga kode lbh clean
 async def showspesific(id: int):
     data = find_data(id)
+    # cek jika data dg id yg dicari tdk ada beri response dg status 404
+    if not data: 
+        # cara 2 dg httpexception (import dulu)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'data dengan id {id} tidak ditemukan'
+                            )
     return{
         "data with id": data
     }
