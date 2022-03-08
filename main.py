@@ -4,10 +4,8 @@ from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange 
 """
-jika ingin set default status kode, misal pd @app.post("/createpost") jika berhsl ingin 201 maka kodenya diubah jd
-@app.post("/createpost",status_code=status.HTTP_201_CREATED)
-
-HAPUS DATA DG ID TERTENTU
+edit data dengan id tertentu. sama sprti post dimana kita perlu class yg akan menangkap dan validasi data yg di edit/update
+jd untuk ini kita gunakan dulu saja class Post karena sama
 """
 
 
@@ -33,7 +31,7 @@ def find_data(id):
     for data in data_store:
         if data["id"] == id:
             return data
-# cari index dari data yg ingin dihapus
+
 def find_index(id):
     for i, data in enumerate(data_store):
         if data["id"] == id:
@@ -74,13 +72,27 @@ async def showspesific(id: int):
 
 @app.delete("/post/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["create new data group"], summary=["hapus data id yg ditentukan"], description="menghapus data dari id yg ditentukan lewat parameter url")
 async def delete_post(id: int):
-    # cari index dari id data yg ingin dihapus
     index = find_index(id)
-    # jika data tidak ditemukan
     if index is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
                             )
-    # hapus dari array data yg dicari dg pop index dari data tsb
     data_store.pop(index)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.put("/post/{id}", tags=["create new data group"], summary=["ubah data id yg ditentukan"], description="mengubah data dari id yg ditentukan lewat parameter url")
+# tangkap data yg diupdate dg class Post, karena data yg diupdate itu = data ketika buat data baru (post)
+async def update_post(id: int, data_update: Post):
+    # cari index dari id data yg ingin diupdate
+    index = find_index(id)
+    # cek jika idnya tidak ada
+    if index is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'data dengan id {id} tidak ditemukan')
+    # jika idnya ada, tangkap datanya dlm bntk dictionary
+    data_dict = data_update.dict()
+    # tangkap id dari data yg dicari
+    data_dict["id"] = id
+    # timpa data dari id dicari dg data baru dan letakkan di index yg sama sprti data sblmnya kedlm array tmpt disimpannya semua data (data_store)
+    data_store[index] = data_dict
+    return {"data update": data_dict}
