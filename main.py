@@ -2,42 +2,66 @@ from click import option
 from fastapi import FastAPI
 from fastapi.params import Body
 from pydantic import BaseModel
+from random import randrange #untuk generate id
 """
-data yg diberikan user hrs divalidasi. gunakan pydantic (BaseModel) & data ditangkap dulu kedlm class
-INGAT jangan percaya apa yg diinput user (lakukan validasi agar aplikasi aman)
-validasi jenis tipe data https://pydantic-docs.helpmanual.io/usage/types/
+simpan data kedlm array
 """
 
 
 app = FastAPI(title="Dokumentasi untuk api")
 
-# class ini akan menangkap dan validasi tipe data yg diinput user
+# berupa array dictionary
+data_store = [{
+    "id":1,
+    "nama":"no name",
+    "umur":43
+    },
+    {
+    "id":2,
+    "nama":"michael",
+    "umur":23
+},
+]
+
 class Post(BaseModel):
-    # nama hrs string dan umur hrs int
     nama: str
     umur: int
-    # benarsalah: bool = True, kita beri nilai default yaitu True
-    # cirifisik: Optional[str] = None, cirifisik adlh data yg bersifat optional (not required) tipe datanya hrs string. nilai defaultnya None
+# fungsi ini akan mencari data dr id yg telah ditentukan, nantinya digunakan untuk menampilkan data yg dicari berdsr id
+def find_data(id):
+    for data in data_store:
+        if data["id"] == id:
+            return data
 
-@app.post("/createpost2", tags=["create new data group"], summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
-# data yg ditangkap berupa objek class Post yg tlh kita buat diatas, jd hanya nama dan umur saja yg diterima
-async def createdata2(tangkapdata: Post):
-    return {
-        "nama": tangkapdata.nama,
-        "umur": tangkapdata.umur,
-        "data": tangkapdata.dict()
+@app.get("/showpost", tags=["create new data group"], summary=["tampilkan data dari array"], description="menampilkan data array, hardcode")
+async def show():
+    return{
+        "data": data_store
     }
-"""
-kita buat 4 skenario yaitu umur
-1. nama dan umur ada 
-    {"nama": "udin", "umur": 12} (status 200)
-2. salah satunya tidak ada 
-    {"umur": 12} (status 422)
-3. data nama, umur, alamat 
-    {"nama": "udin", "umur": 12, "alamat":"indonesia"} (status 200 tp alamat tdk ditangkap, good)
-4. tipe data tdk sesuai 
-    {"nama": "udin", "umur": "12"} (status 200, hrsnya 12 adlh int tp string msh masuk ??)
-    {"nama": udin, "umur": 12} (status 422, nice)
-    {"nama": 12, "umur": 12} (status 200)
-    jd angka akan auto diconvert jd string
-"""
+@app.post("/createpost2", tags=["create new data group"], summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
+async def createdata2(tangkapdata: Post):
+    data_dict = tangkapdata.dict()
+    # generate id
+    data_dict['id'] = randrange(0, 1000000)
+    # tambahkan data baru kedlm array dg bantuan append
+    data_store.append(data_dict)
+    return {
+        "data": data_dict
+    }
+
+# NOTE JIKA KODE INI DISIMPAN DIAKHIR (STLH showspesific akan error), jd kita simpan sblm itu. USAHAKAN yg ada param url diletakkan terakhir
+# menampilkan data yg terakhir dibuat
+@app.get("/showpost/latest", tags=["create new data group"], summary=["tampilkan hanya data yg terakhir dibuat"], description="menampilkan data yg terakhir dibuat")
+async def showslatestdata():
+    data = data_store[len(data_store)-1]
+    return{
+        "data latest": data
+    }
+
+# show spesifik id
+@app.get("/showpost/{id}", tags=["create new data group"], summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
+# id adalah int jd kalau string akan error
+async def showspesific(id: int):
+    data = find_data(id)
+    return{
+        "data with id": data
+    }
