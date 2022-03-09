@@ -2,10 +2,12 @@ from click import option
 from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
-from random import randrange 
+from random import randrange
+import psycopg2 
+from psycopg2.extras import RealDictCursor
 """
-edit data dengan id tertentu. sama sprti post dimana kita perlu class yg akan menangkap dan validasi data yg di edit/update
-jd untuk ini kita gunakan dulu saja class Post karena sama
+koneksi ke db dg psycopg2
+RealDictCursor untuk mempermudah mapping & json
 """
 
 
@@ -26,6 +28,16 @@ data_store = [{
 class Post(BaseModel):
     nama: str
     umur: int
+# agar terkoneksi ke db
+try:
+    con = psycopg2.connect(host="localhost", database="", user="", password="", port=5432, cursor_factory=RealDictCursor)
+    # untuk sql statement
+    cursor = con.cursor()
+    # berhsl konek
+    print("berhsl terhubung ke database")
+except Exception as error:
+    print("gagal terhubung ke database")
+    print("Error : ", error)
 
 def find_data(id):
     for data in data_store:
@@ -81,18 +93,12 @@ async def delete_post(id: int):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/post/{id}", tags=["create new data group"], summary=["ubah data id yg ditentukan"], description="mengubah data dari id yg ditentukan lewat parameter url")
-# tangkap data yg diupdate dg class Post, karena data yg diupdate itu = data ketika buat data baru (post)
 async def update_post(id: int, data_update: Post):
-    # cari index dari id data yg ingin diupdate
     index = find_index(id)
-    # cek jika idnya tidak ada
     if index is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan')
-    # jika idnya ada, tangkap datanya dlm bntk dictionary
     data_dict = data_update.dict()
-    # tangkap id dari data yg dicari
     data_dict["id"] = id
-    # timpa data dari id dicari dg data baru dan letakkan di index yg sama sprti data sblmnya kedlm array tmpt disimpannya semua data (data_store)
     data_store[index] = data_dict
     return {"data update": data_dict}

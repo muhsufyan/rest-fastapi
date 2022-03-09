@@ -12,6 +12,6 @@ uvicorn:
 requirements:
 	pip install -r requirements.txt
 run:
-	uvicorn main:app
+	uvicorn app.main:app
 run_autoreload:
-	uvicorn main:app --reload
+	uvicorn app.main:app --reload
