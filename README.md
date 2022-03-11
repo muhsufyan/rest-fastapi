@@ -1,6 +1,6 @@
-## DATA PD OPERASI CRUD SBLM DISIMPAN KE DATABASE DG ORM SQLALCHEMY AKAN DILAKUKAN 
-data akan disaring oleh file schema.py, fungsi file tsb sbg filter data antara user dengan database dg kata lain <br>
-schema akan menjd filter untuk data request yg menuju ke db dan filter untuk data response yg menuju ke user untuk<br> ditampilkan disisi client
-### lihat skema & arah tanda panah dibawah ini agar mengerti fungsi dr schema
-#### client ==> schema ==> data : kita sbt dg filter request
-#### cleint <== schema <== data : kita sbt dg filter response
+## BUAT TABEL USER, ENKRIP PASSWORD
+di models.py
+<br> validasi email kita gunakan pip install email-validator <br>
+enkrip password gunakan passlib, bcrypt<br>
+pip install passlib[bcrypt]
+<br> cara membuat password yg tlh dienkrip/hash ada di file utils.py dg nama fungsi hash

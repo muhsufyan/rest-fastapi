@@ -21,3 +21,7 @@ sqlalchemy:
 	pip install sqlalchemy
 sqlalchemy_dbexist:
 	pip install sqlalchemy_utils
+emailvalid:
+	pip install email-validator
+bcrypt:
+	pip install passlib[bcrypt]

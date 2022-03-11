@@ -4,3 +4,5 @@ uvicorn == 0.17.5
 psycopg2 # connect to database
 sqlalchemy
 sqlalchemy_utils
+email-validator
+passlib[bcrypt]

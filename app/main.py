@@ -1,13 +1,15 @@
 import time
 from typing import Optional, List
 from fastapi import Depends, FastAPI, Response, status, HTTPException
-# import schema yg tlh kita buat schema.py karena workdir nya sama dg main.py maka tinggal import dari . (maksudnya workdir nya sama)
-from . import models, schema
+# import enkripsi password di file utils.py
+from . import models, schema, utils
 from .database import engine, get_db
 from sqlalchemy.orm import Session
+
 """
-schema, class Post(BaseModel) sebagai filter request dan response pindah ke schema.py
+enkrip password 
 """
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Dokumentasi untuk api")
@@ -66,3 +68,19 @@ async def update_post(id: int, data_update: schema.UpdatePostRequest, db: Sessio
     cari_id.update(data_update.dict(), synchronize_session=False)
     db.commit()
     return cari_id.first()
+
+@app.post("/createuser", response_model=schema.UserResponse, status_code=status.HTTP_201_CREATED, tags=["akun"], summary=["buat akun baru"], description="membuat akun baru")
+# kita buat synchronous
+def create_user(user: schema.CreateUserRequest, db: Session = Depends(get_db)):
+    # simpan password yg tlh dienkrip/hash ke user
+    user.password = utils.hash(user.password)
+    # tangkap data user
+    data_user_baru = models.User(**user.dict())
+    # tambahkan ke list db yg disimpan dlm memory sementara
+    db.add(data_user_baru)
+    # simpan ke db
+    db.commit()
+    db.refresh(data_user_baru)
+    
+    return data_user_baru
+    
