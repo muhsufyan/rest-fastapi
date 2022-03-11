@@ -17,3 +17,7 @@ run_autoreload:
 	uvicorn app.main:app --reload
 create_db_table:
 	python utils/db.py
+sqlalchemy:
+	pip install sqlalchemy
+sqlalchemy_dbexist:
+	pip install sqlalchemy_utils

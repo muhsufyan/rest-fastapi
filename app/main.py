@@ -1,30 +1,22 @@
 import time
 from click import option
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import Depends, FastAPI, Response, status, HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange
-import psycopg2 
-from psycopg2.extras import RealDictCursor
+from sqlalchemy import false
+# import model, konektor db sqlalchemy kita
+from . import models
+from .database import engine, get_db
+from sqlalchemy.orm import Session
 """
-koneksi ke db dg psycopg2
-RealDictCursor untuk mempermudah mapping & json
+koneksi ke db dg sql alchemy
 """
-
+# integrasi semua resource akses ke db, yaitu models dan konektor
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Dokumentasi untuk api")
 
-data_store = [{
-    "id":1,
-    "nama":"no name",
-    "umur":43
-    },
-    {
-    "id":2,
-    "nama":"michael",
-    "umur":23
-},
-]
 
 class Post(BaseModel):
     nama: str
@@ -32,54 +24,48 @@ class Post(BaseModel):
     alamat: str
     published: bool = True
 
-# karena kita ingin terus terkoneksi maka hrs infinite loop sehingga jika error akan terlihat trs
-while True:
-# agar terkoneksi ke db
-    try:
-        con = psycopg2.connect(host="localhost",database="fastapi", user="root", password="password", port=5432, cursor_factory=RealDictCursor)
-        # untuk sql statement
-        cursor = con.cursor()
-        # berhsl konek
-        print("berhsl terhubung ke database")
-        break
-    except Exception as error:
-        print("gagal terhubung ke database")
-        print("Error : ", error)
-        time.sleep(2)
-
+# endpoint untuk cek koneksi ke db
+@app.get("/konektor", tags=["cek koneksi db"])
+# gunakan dependency get_db untuk konek ke db yg bertipe session milik sqlalchemy
+async def konekdb(db: Session = Depends(get_db)):
+    # get semua data
+    data = db.query(models.Post).all()
+    # cek atribut database yg dpt diambil apa saja sekaligus cek query dlm bntk sqlnya
+    print(db.query(models.Post)) # sama dg SELECT posts.id AS posts_id, posts.nama AS posts_nama, posts.umur AS posts_umur, posts.alamat AS posts_alamat, posts.published AS posts_published, posts.created_at AS posts_created_at FROM posts
+    return {
+        "message":"sukses terkoneksi ke db",
+        "data":data
+    }
 @app.get("/showpost", tags=["create new data group"], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
-async def show():
-    # query
-    cursor.execute(""" SELECT * FROM posts """)
-    # fetch all data
-    post = cursor.fetchall()
+async def show(db: Session = Depends(get_db)):
+    data = db.query(models.Post).all()
     return{
-        "data": post
+        "data": data
     }
 @app.post("/createpost",status_code=status.HTTP_201_CREATED, tags=["create new data group"], summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
-async def createdata2(tangkapdata: Post):
-    
-    # kode ini akan rentan terhdp sql injeksi yaitu
-    # cursor.execute(f'INSERT INTO posts (nama, umur, alamat, published) VALUES ({tangkapdata.nama},{tangkapdata.umur},{tangkapdata.alamat},{tangkapdata.published})')
-    # lbh tptnya pd bagian ({tangkapdata.nama},{tangkapdata.umur},{tangkapdata.alamat},{tangkapdata.published})
-
-    # agar mencegah sql injeksi gunakan kode dibwh ini (urutan memengaruhi jd jgn salah menempatkan data)
-    
-    # query 
-    cursor.execute(""" INSERT INTO posts (nama, umur, alamat, published) VALUES (%s, %s, %s, %s) RETURNING * """, (tangkapdata.nama, tangkapdata.umur, tangkapdata.alamat, tangkapdata.published))
-    # hanya 1 data yg disimpan jd gunakan fecthone untuk fetch data (ini tdk menyimpan data tp hanya fetch, jika berhsl ditampilkan tp data tdk masuk ke db hanya ke memory sementara 
-    # sehingga ketika di restart data akan hilang)
-    data_baru = cursor.fetchone()
-    # data simpan ke db
-    con.commit()
+async def createdata2(tangkapdata: Post, db: Session = Depends(get_db)):
+    # menangkap dan simpan data dlm memory sementara
+    data_baru = models.Post(nama=tangkapdata.nama, umur=tangkapdata.umur, alamat=tangkapdata.alamat, published=tangkapdata.published)
+    """
+    jika ingin lbh simpel gunakan kode sprt brkt
+    print(**tangkapdata.dict())
+    data_baru = models.Post(**tangkapdata.dict())
+    """
+    data = models.Post(**tangkapdata.dict())
+    # simpan ke db
+    db.add(data_baru)
+    db.commit()
+    db.refresh(data_baru)
     return {
-        "data": data_baru
+        "data": data_baru,
+        "dengan **":data
     }
 
 @app.get("/showpost/{id}", tags=["create new data group"], summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
-async def showspesific(id: int):
-    cursor.execute(""" SELECT * FROM posts WHERE id = %s""", (str(id)))
-    data = cursor.fetchone()
+async def showspesific(id: int, db: Session = Depends(get_db)):
+    data = db.query(models.Post).filter(models.Post.id == id).first()
+    # cetak query sqlnya
+    print(db.query(models.Post).filter(models.Post.id == id))
     if not data: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
@@ -89,28 +75,27 @@ async def showspesific(id: int):
     }
 
 @app.delete("/post/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["create new data group"], summary=["hapus data id yg ditentukan"], description="menghapus data dari id yg ditentukan lewat parameter url")
-async def delete_post(id: int):
-    # query
-    cursor.execute(""" DELETE FROM posts WHERE id = %s returning *""", (str(id)))
-    # fetch 1 data
-    data = cursor.fetchone()
-    # save to db
-    con.commit()
-    if data is None:
+async def delete_post(id: int, db: Session = Depends(get_db)):
+    # get data dg id
+    data = db.query(models.Post).filter(models.Post.id == id)
+    if data.first() is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
                             )
+    # simpan ke db
+    data.delete(synchronize_session=False)
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/post/{id}", tags=["create new data group"], summary=["ubah data id yg ditentukan"], description="mengubah data dari id yg ditentukan lewat parameter url")
-async def update_post(id: int, data_update: Post):
-    cursor.execute(""" UPDATE posts SET nama=%s, umur=%s, alamat=%s, published=%s WHERE id=%s RETURNING * """, (data_update.nama, data_update.umur, data_update.alamat, data_update.published, str(id)))
-    # karena hanya 1 data yg di olah
-    update_data = cursor.fetchone()
-    # simpan ke db
-    con.commit()
-    if update_data is None:
+async def update_post(id: int, data_update: Post, db: Session = Depends(get_db)):
+    cari_id = db.query(models.Post).filter(models.Post.id == id)
+    data_cari = cari_id.first()
+    if data_cari is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan')
+    cari_id.update(data_update.dict(), synchronize_session=False)
+    # simpan ke db
+    db.commit()
     
-    return {"data update": update_data}
+    return {"data update": data_update.dict()}
