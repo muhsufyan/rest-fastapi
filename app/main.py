@@ -1,3 +1,4 @@
+import time
 from click import option
 from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
@@ -28,52 +29,57 @@ data_store = [{
 class Post(BaseModel):
     nama: str
     umur: int
+    alamat: str
+    published: bool = True
+
+# karena kita ingin terus terkoneksi maka hrs infinite loop sehingga jika error akan terlihat trs
+while True:
 # agar terkoneksi ke db
-try:
-    con = psycopg2.connect(host="localhost", database="", user="", password="", port=5432, cursor_factory=RealDictCursor)
-    # untuk sql statement
-    cursor = con.cursor()
-    # berhsl konek
-    print("berhsl terhubung ke database")
-except Exception as error:
-    print("gagal terhubung ke database")
-    print("Error : ", error)
+    try:
+        con = psycopg2.connect(host="localhost",database="fastapi", user="root", password="password", port=5432, cursor_factory=RealDictCursor)
+        # untuk sql statement
+        cursor = con.cursor()
+        # berhsl konek
+        print("berhsl terhubung ke database")
+        break
+    except Exception as error:
+        print("gagal terhubung ke database")
+        print("Error : ", error)
+        time.sleep(2)
 
-def find_data(id):
-    for data in data_store:
-        if data["id"] == id:
-            return data
-
-def find_index(id):
-    for i, data in enumerate(data_store):
-        if data["id"] == id:
-            return i
-
-@app.get("/showpost", tags=["create new data group"], summary=["tampilkan data dari array"], description="menampilkan data array, hardcode")
+@app.get("/showpost", tags=["create new data group"], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
 async def show():
+    # query
+    cursor.execute(""" SELECT * FROM posts """)
+    # fetch all data
+    post = cursor.fetchall()
     return{
-        "data": data_store
+        "data": post
     }
 @app.post("/createpost",status_code=status.HTTP_201_CREATED, tags=["create new data group"], summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
 async def createdata2(tangkapdata: Post):
-    data_dict = tangkapdata.dict()
-    data_dict['id'] = randrange(0, 1000000)
-    data_store.append(data_dict)
+    
+    # kode ini akan rentan terhdp sql injeksi yaitu
+    # cursor.execute(f'INSERT INTO posts (nama, umur, alamat, published) VALUES ({tangkapdata.nama},{tangkapdata.umur},{tangkapdata.alamat},{tangkapdata.published})')
+    # lbh tptnya pd bagian ({tangkapdata.nama},{tangkapdata.umur},{tangkapdata.alamat},{tangkapdata.published})
+
+    # agar mencegah sql injeksi gunakan kode dibwh ini (urutan memengaruhi jd jgn salah menempatkan data)
+    
+    # query 
+    cursor.execute(""" INSERT INTO posts (nama, umur, alamat, published) VALUES (%s, %s, %s, %s) RETURNING * """, (tangkapdata.nama, tangkapdata.umur, tangkapdata.alamat, tangkapdata.published))
+    # hanya 1 data yg disimpan jd gunakan fecthone untuk fetch data (ini tdk menyimpan data tp hanya fetch, jika berhsl ditampilkan tp data tdk masuk ke db hanya ke memory sementara 
+    # sehingga ketika di restart data akan hilang)
+    data_baru = cursor.fetchone()
+    # data simpan ke db
+    con.commit()
     return {
-        "data": data_dict
+        "data": data_baru
     }
-
-@app.get("/showpost/latest", tags=["create new data group"], summary=["tampilkan hanya data yg terakhir dibuat"], description="menampilkan data yg terakhir dibuat")
-async def showslatestdata():
-    data = data_store[len(data_store)-1]
-    return{
-        "data latest": data
-    }
-
 
 @app.get("/showpost/{id}", tags=["create new data group"], summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
 async def showspesific(id: int):
-    data = find_data(id)
+    cursor.execute(""" SELECT * FROM posts WHERE id = %s""", (str(id)))
+    data = cursor.fetchone()
     if not data: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
@@ -84,21 +90,27 @@ async def showspesific(id: int):
 
 @app.delete("/post/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["create new data group"], summary=["hapus data id yg ditentukan"], description="menghapus data dari id yg ditentukan lewat parameter url")
 async def delete_post(id: int):
-    index = find_index(id)
-    if index is None:
+    # query
+    cursor.execute(""" DELETE FROM posts WHERE id = %s returning *""", (str(id)))
+    # fetch 1 data
+    data = cursor.fetchone()
+    # save to db
+    con.commit()
+    if data is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
                             )
-    data_store.pop(index)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/post/{id}", tags=["create new data group"], summary=["ubah data id yg ditentukan"], description="mengubah data dari id yg ditentukan lewat parameter url")
 async def update_post(id: int, data_update: Post):
-    index = find_index(id)
-    if index is None:
+    cursor.execute(""" UPDATE posts SET nama=%s, umur=%s, alamat=%s, published=%s WHERE id=%s RETURNING * """, (data_update.nama, data_update.umur, data_update.alamat, data_update.published, str(id)))
+    # karena hanya 1 data yg di olah
+    update_data = cursor.fetchone()
+    # simpan ke db
+    con.commit()
+    if update_data is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan')
-    data_dict = data_update.dict()
-    data_dict["id"] = id
-    data_store[index] = data_dict
-    return {"data update": data_dict}
+    
+    return {"data update": update_data}

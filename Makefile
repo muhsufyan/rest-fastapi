@@ -15,3 +15,5 @@ run:
 	uvicorn app.main:app
 run_autoreload:
 	uvicorn app.main:app --reload
+create_db_table:
+	python utils/db.py
