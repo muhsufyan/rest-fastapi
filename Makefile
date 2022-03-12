@@ -25,3 +25,7 @@ emailvalid:
 	pip install email-validator
 bcrypt:
 	pip install passlib[bcrypt]
+jwt:
+	pip install python-jose[cryptography]
+form_login:
+	pip install python-multipart

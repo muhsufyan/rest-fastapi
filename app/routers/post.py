@@ -1,4 +1,4 @@
-from .. import models, schema
+from .. import models, schema, oauth
 from fastapi import Depends, Response, status, HTTPException, APIRouter
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -18,8 +18,11 @@ async def show(db: Session = Depends(get_db)):
     return data
     
 @router.post("/createnew", response_model=schema.PostResponse, status_code=status.HTTP_201_CREATED, summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
-# ubah tipe data param tangkapdata dari Post jd schema.Post karena class Post tlh dipindahkan ke schema.py
-async def createdata(tangkapdata: schema.CreatePostRequest, db: Session = Depends(get_db)):
+# hrs login dulu melalui user_id: int = Depends(oauth.get_current_user)
+async def createdata(tangkapdata: schema.CreatePostRequest,
+                    db: Session = Depends(get_db),
+                    user_id: int = Depends(oauth.get_current_user)):
+    print(user_id)
     data_baru = models.Post(nama=tangkapdata.nama, umur=tangkapdata.umur, alamat=tangkapdata.alamat, published=tangkapdata.published)
     db.add(data_baru)
     db.commit()
@@ -34,8 +37,12 @@ async def createdata(tangkapdata: schema.CreatePostRequest, db: Session = Depend
     """
     return data_baru
 
+# hrs login dulu melalui user_id: int = Depends(oauth.get_current_user)
 @router.get("/show/{id}", response_model=schema.PostResponse, summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
-async def showspesific(id: int, db: Session = Depends(get_db)):
+async def showspesific(id: int,
+                    db: Session = Depends(get_db),
+                    user_id: int = Depends(oauth.get_current_user)):
+    print(user_id)
     data = db.query(models.Post).filter(models.Post.id == id).first()
     print(db.query(models.Post).filter(models.Post.id == id))
     if not data: 
@@ -44,8 +51,11 @@ async def showspesific(id: int, db: Session = Depends(get_db)):
                             )
     return data
 
+# hrs login dulu melalui user_id: int = Depends(oauth.get_current_user)
 @router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT, summary=["hapus data id yg ditentukan"], description="menghapus data dari id yg ditentukan lewat parameter url")
-async def delete_post(id: int, db: Session = Depends(get_db)):
+async def delete_post(id: int,
+                    db: Session = Depends(get_db),
+                    user_id: int = Depends(oauth.get_current_user)):
     data = db.query(models.Post).filter(models.Post.id == id)
     if data.first() is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -55,9 +65,11 @@ async def delete_post(id: int, db: Session = Depends(get_db)):
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+# hrs login dulu melalui user_id: int = Depends(oauth.get_current_user)
 @router.put("/update/{id}", response_model=schema.PostResponse, summary=["ubah data id yg ditentukan"], description="mengubah data dari id yg ditentukan lewat parameter url")
-# ubah tipe data param data_update dari Post jd schema.Post karena class Post tlh dipindahkan ke schema.py
-async def update_post(id: int, data_update: schema.UpdatePostRequest, db: Session = Depends(get_db)):
+async def update_post(id: int, data_update: schema.UpdatePostRequest,
+                    db: Session = Depends(get_db),
+                    user_id: int = Depends(oauth.get_current_user)):
     cari_id = db.query(models.Post).filter(models.Post.id == id)
     data_cari = cari_id.first()
     if data_cari is None:

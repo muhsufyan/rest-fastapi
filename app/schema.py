@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr
 # handle data sekaligus validasi data input dr client (filter request)
 class PostBase(BaseModel):
@@ -28,3 +29,17 @@ class UserResponse(BaseModel):
     email: EmailStr
     class Config:
         orm_mode = True
+
+# filter request untuk login
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+# filter response
+class Token(BaseModel):
+    token: str
+    tipe_token: str
+
+# filter response ketika sdh login
+class TokenData(BaseModel):
+    id: Optional[str] = None

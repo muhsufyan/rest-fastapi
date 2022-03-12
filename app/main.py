@@ -1,7 +1,7 @@
 from fastapi import Depends, FastAPI
 from . import models
 from .database import engine
-from .routers import post, user
+from .routers import post, user, auth
 
 """
 enkrip password 
@@ -15,7 +15,8 @@ app = FastAPI(title="Dokumentasi untuk api")
 app.include_router(post.router)
 # panggil semua route user.py
 app.include_router(user.router)
-
+# panggil semua route atuh.py
+app.include_router(auth.router)
 
 
 

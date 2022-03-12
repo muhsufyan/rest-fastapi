@@ -8,7 +8,7 @@ router = APIRouter(
     tags=["akun"]
 )
 
-@router.post("/create", response_model=schema.UserResponse, status_code=status.HTTP_201_CREATED, summary=["buat akun baru"], description="membuat akun baru")
+@router.post("/create", response_model=schema.Token, status_code=status.HTTP_201_CREATED, summary=["buat akun baru"], description="membuat akun baru")
 def create_user(user: schema.CreateUserRequest, db: Session = Depends(get_db)):
     user.password = utils.hash(user.password)
     data_user_baru = models.User(**user.dict())
