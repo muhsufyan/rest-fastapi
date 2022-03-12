@@ -2,15 +2,21 @@ from .. import models, schema, oauth
 from fastapi import Depends, Response, status, HTTPException, APIRouter
 from sqlalchemy.orm import Session
 from ..database import get_db
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(
     prefix="/posts",
     tags=["data pribadi"]
 )
 @router.get("/showall", response_model= List[schema.PostResponse], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
-async def show(db: Session = Depends(get_db)):
-    data = db.query(models.Post).all()
+# /showall?limit=n artinya 1 limit hanya menampilkan data sebanyak n 
+async def show(db: Session = Depends(get_db), limit: int = 5, skip: int = 0, search: Optional[str]=""):
+    print(limit)
+    # kita ambil defaultnya 5 data untuk 1 limit, kemudian kita lewatkan/skip data sebanyak 0 data (defaultnya) misal
+    # limit 5 dg skip 1 maka 1,3,5,7,9 limit ke 1, limit ke 2 yaitu 10,13,16,19 
+    print(skip)
+    # ini untuk pencarian misal /url?limit=x&skip=y&search=nama_yang_dicari atau /url?search=nama_yang_dicari
+    data = db.query(models.Post).filter(models.Post.nama.contains(search)).limit(limit).offset(skip).all()
     return data
 # tampilkan semua post yg dibuat oleh user yg login saja 
 @router.get("/myposts", response_model= List[schema.PostResponse], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
