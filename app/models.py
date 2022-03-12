@@ -21,8 +21,9 @@ class Post(Base):
     alamat = Column(String, nullable=False)
     published = Column(Boolean, server_default="True", nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    # id users jd foreign key sebagai relasi ke posts (one:users to many:posts). id users ini di tabel posts kita namai owner_id
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # owner berisi data tabel users lewat class User. mengambil semua data tabel User dari tabel Post tanpa query langsung ke tabel User
+    owner = relationship("User")
 # buat tabel users
 class User(Base):
     #nama tabelnya users

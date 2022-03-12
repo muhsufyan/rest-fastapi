@@ -1,4 +1,3 @@
-## User hanya dpt melihat, update dan delete post miliknya saja
-post milik org lain tdk dpt di lihat, update / delete, jd hanya post sendiri yg dpt di lihat, update & delete
-
-
+## field yg berelasi
+liat bagian models Post ada owner, schema UserResponse jd diatas lalu PostResponse tambah owner yg mrpkn class dari UserResponse.<br>
+Intinya kita dpt mengambil data User dari Post tanpa query langsung ke User
