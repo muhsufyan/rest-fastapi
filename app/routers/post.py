@@ -19,14 +19,14 @@ async def createdata(tangkapdata: schema.CreatePostRequest,
                     db: Session = Depends(get_db),
                     current_user: int = Depends(oauth.get_current_user)):
     print(current_user)
-    data_baru = models.Post(nama=tangkapdata.nama, umur=tangkapdata.umur, alamat=tangkapdata.alamat, published=tangkapdata.published)
+    data_baru = models.Post(nama=tangkapdata.nama, umur=tangkapdata.umur, alamat=tangkapdata.alamat, published=tangkapdata.published, owner_id=current_user.id)
     db.add(data_baru)
     db.commit()
     db.refresh(data_baru)
     """
     jika ingin lbh simpel gunakan kode sprt brkt
     print(**tangkapdata.dict())
-    data = models.Post(**tangkapdata.dict())
+    data = models.Post(owner_id=current_user.id, **tangkapdata.dict())
     db.add(data)
     db.commit()
     db.refresh(data)

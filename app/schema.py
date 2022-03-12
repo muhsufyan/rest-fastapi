@@ -16,6 +16,7 @@ class UpdatePostRequest(PostBase):
 # filter response(data response yg dikirim ke client)
 class PostResponse(PostBase):
     id: int
+    owner_id: int
     class Config:
         orm_mode = True
 # filter request akun 

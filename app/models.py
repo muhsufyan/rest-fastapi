@@ -1,6 +1,6 @@
 # file ini untuk membuat model dari db, sekaligus untuk buat tabel
 from sqlalchemy.sql.expression import text
-from sqlalchemy import TIMESTAMP, Boolean, Column, Integer, String
+from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 # import file database.py yg telah kita buat sblmnya, dimana fungsi database.py tsb sbg konektor ke db
 from .database import Base
@@ -21,7 +21,8 @@ class Post(Base):
     alamat = Column(String, nullable=False)
     published = Column(Boolean, server_default="True", nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-
+    # id users jd foreign key sebagai relasi ke posts (one:users to many:posts). id users ini di tabel posts kita namai owner_id
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 # buat tabel users
 class User(Base):
     #nama tabelnya users
