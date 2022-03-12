@@ -1,7 +1,4 @@
-## RELASI ANTAR TABEL, buat post dg id user yg login
-pd kasus kita hubungannya one to many yaitu one users relation to many posts<br>
-sehingga id users akan jd foreign key di tabel posts<br>
-lihat di models.py<br>
-lihat juga perubahan di schema.py, dan routers/post.py
+## User hanya dpt melihat, update dan delete post miliknya saja
+post milik org lain tdk dpt di lihat, update / delete, jd hanya post sendiri yg dpt di lihat, update & delete
 
 

@@ -12,6 +12,12 @@ router = APIRouter(
 async def show(db: Session = Depends(get_db)):
     data = db.query(models.Post).all()
     return data
+# tampilkan semua post yg dibuat oleh user yg login saja 
+@router.get("/myposts", response_model= List[schema.PostResponse], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
+async def show(db: Session = Depends(get_db), current_user: Session = Depends(oauth.get_current_user)):
+    # dptkan semua data dr db dimana owner_id dr post adlh id user yg login saja
+    data = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()
+    return data
     
 @router.post("/createnew", response_model=schema.PostResponse, status_code=status.HTTP_201_CREATED, summary=["buat data baru"], description="buat data baru dlm json lalu tangkap datanya dan tampilkan")
 # hrs login dulu melalui current_user: int = Depends(oauth.get_current_user)
@@ -34,7 +40,7 @@ async def createdata(tangkapdata: schema.CreatePostRequest,
     return data_baru
 
 # hrs login dulu melalui current_user: int = Depends(oauth.get_current_user)
-@router.get("/show/{id}", response_model=schema.PostResponse, summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
+@router.get("/mypost/{id}", response_model=schema.PostResponse, summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
 async def showspesific(id: int,
                     db: Session = Depends(get_db),
                     current_user: int = Depends(oauth.get_current_user)):
@@ -45,6 +51,10 @@ async def showspesific(id: int,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
                             )
+    # cek id yg login hrs sama dg owner_id dr post jika sama baru bisa melihat post
+    # jika tdk sama maka beri notif bahwa dia tdk bisa meihat post
+    if data.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="aksi tidak diizinkan")
     return data
 
 # hrs login dulu melalui current_user: int = Depends(oauth.get_current_user)
@@ -52,12 +62,17 @@ async def showspesific(id: int,
 async def delete_post(id: int,
                     db: Session = Depends(get_db),
                     current_user: int = Depends(oauth.get_current_user)):
-    data = db.query(models.Post).filter(models.Post.id == id)
-    if data.first() is None:
+    data = db.query(models.Post).filter(models.Post.id == id).first()
+    data_query = db.query(models.Post).filter(models.Post.id == id)
+    if data is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
                             )
-    data.delete(synchronize_session=False)
+    # cek id yg login hrs sama dg owner_id dr post jika sama baru bisa delete
+    # jika tdk sama maka beri notif bahwa dia tdk bisa delete
+    if data.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="aksi tidak diizinkan")
+    data_query.delete(synchronize_session=False)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -71,6 +86,10 @@ async def update_post(id: int, data_update: schema.UpdatePostRequest,
     if data_cari is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan')
+    # cek id yg login hrs sama dg owner_id dr post jika sama baru bisa update
+    # jika tdk sama maka beri notif bahwa dia tdk bisa update
+    if data_cari.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="aksi tidak diizinkan")
     cari_id.update(data_update.dict(), synchronize_session=False)
     db.commit()
     return cari_id.first()
