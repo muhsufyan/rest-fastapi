@@ -7,11 +7,13 @@ import string
 from . import schema, database, models
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from .config import settings
 # skema untuk token bearer
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
-SECRET_KEY = ''.join(random.choices(string.ascii_letters + string.digits, k = 32))
-ALGORITMA = "HS256"
-WAKTU_EXPIRE_TOKEN_MENIT = 5
+# SECRET_KEY = ''.join(random.choices(string.ascii_letters + string.digits, k = 32))
+SECRET_KEY= settings.jwt_secret_key
+ALGORITMA = settings.jwt_algoritma
+WAKTU_EXPIRE_TOKEN_MENIT = settings.jwt_expire
 
 # buat token/generate token
 def create_token(data: dict):

@@ -1,0 +1,4 @@
+# file & folder dibwh ini akan dicomment & jika diaktifkan file dan folder dibwh ini tdk akan di push ke github
+# __pycache__
+# develop
+# .env
