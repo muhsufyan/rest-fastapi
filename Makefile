@@ -29,3 +29,5 @@ jwt:
 	pip install python-jose[cryptography]
 form_login:
 	pip install python-multipart
+alembic:
+	pip install alembic
