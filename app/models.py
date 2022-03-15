@@ -33,3 +33,11 @@ class User(Base):
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+# tabel vote, 1 users hanya dpt vote(like) 1 post
+class Vote(Base):
+    __tablename__="vote"
+    # didpt dr id users yg memvote post dg id dibawah (id users dibwh adlh milik tabel users jd dia adlh foreign key)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    # didpt dr id post yg divote oleh users dg id diatas (id post dibwh adlh milik tabel posts jd dia adlh foreign key)
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), primary_key=True)
