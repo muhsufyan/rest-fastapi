@@ -1,0 +1,57 @@
+# gunakan docker compose versi 3.8
+version: '3.8'
+# service adlh tools apa saja yg kita gunakan, misal postgresql, redis, kafka, rabbitmq. kasus ini kita perlu postgresql
+services:
+  # perintah ini = "docker build ." fungsinya untuk build aplikasi kita yg diberi nama api
+  api:
+    build: .
+    # sblm service/image aplikasi kita di build maka build dulu container postgres
+    depends_on:
+      - postgres
+    # ini adlh port dari aplikasi yg kita buat
+    ports:
+      # 4000 adlh port yg diexpose ke public sedangkan 8000 adlh port aplikasi kita di container
+      - 80:8000
+    # karena file ini untuk development maka agar perubahan tdk perlu selalu docker exec kita gunakan auto reload
+    # sehingga fungsi CMD untuk run app kita akan overwrite
+    # note : untuk production tdk perlu ditambh --reload karena kita tdk mengubah kodingan di production
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    
+    # untuk mengisi environment variabel aplikasi kita yaitu setting database dan jwt
+    environment:
+      - db_hostname=${DB_HOSTNAME}
+      - db_port=${DB_PORT}
+      - db_name=${DB_NAME}
+      - db_username=${DB_USERNAME}
+      - db_pass=${DB_PASS}
+      - jwt_secret_key=${JWT_SECRET_KEY} 
+      - jwt_algoritma=${JWT_ALGORITMA}
+      - jwt_expire=${JWT_EXPIRE}
+    # jika ingin dlm bntk file gunakan sprti dibwh ini (uncomment)
+    # env_file:
+    #   - ./.env
+  
+  # kita perlu image & container postgresql jd kita buat container database postgresql dg nama container postgres
+  postgres:
+  # mengambil/pull image postgres. sama saja dg perintah "docker pull postgres"
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+    # set password container postgres
+      - POSTGRES_PASSWORD=${DB_PASS}
+    # set nama database pd container postgres
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+    
+
+    # gunakan volume agar ketika kita hapus container postgres maka data akan tetap ada (tdk ikut terhapus saat menghapus container)
+    volumes:
+    # simpan volume(data pd postgresql) di /var/lib/postgresql/data
+      - postgres-db:/var/lib/postgresql/data
+
+# buat volume agar ketika kita hapus container postgres maka data akan tetap ada (tdk ikut terhapus saat menghapus container)
+volumes:
+  # nama volume-nya adlh postgres-db
+  - postgres-db:
+
