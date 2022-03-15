@@ -1,4 +1,4 @@
-## CORS/ izin mengakses url
-misalnya kita mengakses api kita dari www.google.com maka akan ditolak oleh cors<br>
-main.py tambahkan middleware cors bawaan fastapi
+## membuat requirements.txt
+semua library yg digunakan dpt dibuat listnya, caranya dg perintah <b>pip freeze > requirements.txt</b><br>
+lalu untuk install semuanya dg perintah <b>pip install -r requirements.txt<b>
 
