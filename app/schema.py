@@ -51,3 +51,31 @@ class Vote(BaseModel):
     post_id: int
     # dir adalah vote, vote_dir= 0 artinya delete vote atau 1 artinya add vote. nilainya 1 atau 0 (hanya 1 nilai jd le=1)
     dir: conint(le=1)
+class PostVoteResponse(BaseModel):
+    post: PostResponse
+    vote: int
+    class Config:
+        orm_mode = True
+# IKUTI SPRTI DI UTUBE
+
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+class Post(PostBase):
+    id: int
+    created_at: datetime
+    owner_id: int
+    owner: UserOut
+
+    class Config:
+        orm_mode = True
+class PostOut(BaseModel):
+    Post: Post
+    votes: int
+
+    class Config:
+        orm_mode = True

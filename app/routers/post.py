@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from .. import models, schema, oauth
 from fastapi import Depends, Response, status, HTTPException, APIRouter
 from sqlalchemy.orm import Session
@@ -8,13 +9,25 @@ router = APIRouter(
     prefix="/posts",
     tags=["data pribadi"]
 )
-@router.get("/showall", response_model= List[schema.PostResponse], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
-# /showall?limit=n artinya 1 limit hanya menampilkan data sebanyak n 
+# @router.get("/showall", response_model= List[schema.PostResponse], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
+@router.get("/showall", response_model= List[schema.PostOut], summary=["tampilkan data dari database"], description="menampilkan data database")
 async def show(db: Session = Depends(get_db), limit: int = 5, skip: int = 0, search: Optional[str]=""):
     print(limit)
     print(skip)
     data = db.query(models.Post).filter(models.Post.nama.contains(search)).limit(limit).offset(skip).all()
-    return data
+    """
+    # join untuk tampilkan jumlah vote dari setiap post. V1
+    result = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).all()
+    # cek query sql
+    # print(db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+    #     models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id))
+    """
+    # V2
+    result = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(
+            models.Post.nama.contains(search)).limit(limit).offset(skip).all()
+    return result
 # tampilkan semua post yg dibuat oleh user yg login saja 
 @router.get("/myposts", response_model= List[schema.PostResponse], summary=["tampilkan data dari database"], description="menampilkan data database, hardcode")
 async def show(db: Session = Depends(get_db), current_user: Session = Depends(oauth.get_current_user)):
@@ -42,22 +55,19 @@ async def createdata(tangkapdata: schema.CreatePostRequest,
     """
     return data_baru
 
-# hrs login dulu melalui current_user: int = Depends(oauth.get_current_user)
-@router.get("/mypost/{id}", response_model=schema.PostResponse, summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
+# ubah response_model=schema.PostResponse jd response_model=schema.PostOut
+@router.get("/mypost/{id}", response_model=schema.PostOut, summary=["tampilkan data id yg ditentukan"], description="menampilkan data dari id yg ditentukan lewat parameter url")
 async def showspesific(id: int,
                     db: Session = Depends(get_db),
                     current_user: int = Depends(oauth.get_current_user)):
-    # tampilkan email dari user yg login
-    print(current_user.email)
-    data = db.query(models.Post).filter(models.Post.id == id).first()
+    # tambah tampilkan vote 
+    # data = db.query(models.Post).filter(models.Post.id == id).first()
+    data = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.id == id).first()
+
     if not data: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'data dengan id {id} tidak ditemukan'
                             )
-    # cek id yg login hrs sama dg owner_id dr post jika sama baru bisa melihat post
-    # jika tdk sama maka beri notif bahwa dia tdk bisa meihat post
-    if data.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="aksi tidak diizinkan")
     return data
 
 # hrs login dulu melalui current_user: int = Depends(oauth.get_current_user)
