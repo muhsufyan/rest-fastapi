@@ -31,3 +31,5 @@ form_login:
 	pip install python-multipart
 alembic:
 	pip install alembic
+pytest:
+	pip install pytest
