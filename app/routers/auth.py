@@ -17,9 +17,9 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
     # ubah user_credentials.email jd user_credentials.username
     data_login = db.query(models.User).filter(models.User.email == user_credentials.username).first()
     if data_login is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"invalid credential")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"invalid credential")
     if not utils.verifikasi_password(user_credentials.password, data_login.password):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"invalid credential")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"invalid credential")
     # jika email dan passwordnya valid maka buat token, data yg akan masukkan kedlm token adlh id saja (nanti kalau ada role bisa dimasukkan)
     token = oauth.create_token(data={"user_id":data_login.id})
     return {

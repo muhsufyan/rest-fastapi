@@ -1,17 +1,7 @@
 import pytest
-from app import schema, models
-from .database import client, session
+from app import schema
 from jose import jwt
 from app.config import settings
-@pytest.fixture()
-def test_user(client):
-    data_input = {"email":"email@email.com", "password":"password"}
-    res = client.post('/akun/create', json=data_input)
-    print(res.json())#debug
-    data_baru = res.json()
-    data_baru["password"] = data_input["password"]
-    assert res.status_code == 201
-    return data_baru
 
 def test_root(client):
     res = client.get("/")
@@ -41,3 +31,32 @@ def test_login(client, test_user):
     assert id == test_user['id']
     assert login_response.tipe_token == 'bearer'
     assert res.status_code == 200
+
+@pytest.mark.parametrize("email, password, expected_statuscode",[
+    # kasus berhsl login
+    ("email@email.com","password",200),
+    # salah email
+    ("email2@email.com","password",403),
+    # salah password
+    ("email@email.com","password12",403),
+    # email kosong
+    (None,"password",422),
+    # password kosong
+    ("email@email.com",None,422),
+    # email dan password tdk ada
+    ("email123@email.com","24password",403)
+])
+
+# def test_incorrect_login(test_user, client):
+#     res = client.post(
+#         '/login', data={'username': test_user['email'], 'password': 'salah'})
+
+#     assert res.status_code == 403
+#     assert res.json().get('detail') == 'invalid credential'
+
+def test_incorrect_login(test_user, client, email, password, expected_statuscode):
+    res = client.post(
+        "/login", data={"username": email, "password": password})
+    print(res.json().get("detail"))
+    assert res.status_code == expected_statuscode
+    # assert res.json().get("detail") == 'invalid credential'
