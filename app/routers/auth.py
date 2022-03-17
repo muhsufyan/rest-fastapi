@@ -11,7 +11,7 @@ from .. import database, models, utils, oauth
 router = APIRouter(
     tags=["/Authentication"]
 )
-@router.post("/login")
+@router.post("/login", response_model=schema.Token)
 def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     # dg OAuth2PasswordRequestForm maka login akan menerima username & password untuk itu email jd username
     # ubah user_credentials.email jd user_credentials.username
@@ -24,5 +24,5 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
     token = oauth.create_token(data={"user_id":data_login.id})
     return {
             "token":token,
-            "tipe_token":"bareer"
+            "tipe_token":"bearer"
             }
