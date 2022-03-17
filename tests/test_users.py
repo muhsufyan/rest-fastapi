@@ -10,6 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 from app.database import Base
+from alembic import command
 """
 buat database baru untuk testing yaitu fastapi_test
 """
@@ -22,9 +23,6 @@ if not database_exists(engine.url):
     create_database(engine.url)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# auto buat db & tabel database
-Base.metadata.create_all(bind=engine)
-
 # konek ke db untuk testing
 def overrid_get_db():
     db = TestingSessionLocal()
@@ -36,20 +34,37 @@ def overrid_get_db():
 from app.database import get_db
 app.dependency_overrides[get_db] = overrid_get_db
 
-# ini akan masuk ke db testing
-client = TestClient(app)
+# agar tdk perlu selalu memanggil client maka kita buat fixture decoratornya nantinya func dlm fixture akan dijdkan param
+@pytest.fixture
+def client():
+    """blok kode ini akan run sblm TestClient"""
+    # buat tabel database
+    Base.metadata.create_all(bind=engine)
+    # command.upgrade("head")#jika memakai alembic
+    """ dg yield maka ini sprti pembatas kode sblm yield akan dieksekusi dulu kemudian yield dan terakhir kode stlh yield baru dieksekusi
+    jd alur run code-nya
+    1. jlnkan kode sblm yield
+    2. jlnkan kode yield
+    3. jlnkan kode setlah yield
+    pd kasus ini 
+    1. jlnkan buat tabel db
+    2. jlnkan TestClient untuk koneksi ke db dan melakukan operasi crud
+    3. jlnkan hapus tabel db
+    """
+    yield TestClient(app)
+    # blok kode ini akan run stlh TestClient dijalankan
+    # hapus tabel database
+    Base.metadata.drop_all(bind=engine)
+    # command.downgrade("base")#jika memakai alembic
 
-def test_root():
+def test_root(client):
     res = client.get("/")
-    # print(res)# outputnya <Response [200]> perintahnya pytest -v -s tests\test_users.py
-    # print(res.json())# outputnya {'message': 'Hello World'} perintahnya pytest -v -s tests\test_users.py
-    # print(res.json().get("message"))# outputnya Hello World perintahnya pytest -v -s tests\test_users.py
     assert res.json().get("message") == 'Hello World'
     assert res.status_code == 200
     # jika expected != data response maka hslnya ada - untuk expected dan + untuk data response
 
-# unit test untuk create user. jika kita run 2 kali maka akan error karena email sdh pernah disimpan (case in blm ada solusinya)
-def test_create_user():
+# unit test untuk create user
+def test_create_user(client):
     res = client.post('/akun/create', json={"email":"email@email.com", "password":"password"})
     print(res.json())
     print(res.json())
