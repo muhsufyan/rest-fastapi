@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from app.config import settings
 from app.database import Base
 from alembic import command
+from app.database import get_db
 """
 buat database baru untuk testing yaitu fastapi_test
 """
@@ -23,39 +24,38 @@ if not database_exists(engine.url):
     create_database(engine.url)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# konek ke db untuk testing
-def overrid_get_db():
+@pytest.fixture
+def session():
+    # hapus tabel database
+    Base.metadata.drop_all(bind=engine)
+    # buat tabel database
+    Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-# overwrite dependency get_db di semua routers controller jd overrid_get_db
-from app.database import get_db
-app.dependency_overrides[get_db] = overrid_get_db
-
-# agar tdk perlu selalu memanggil client maka kita buat fixture decoratornya nantinya func dlm fixture akan dijdkan param
+# setiap kali client dipanggil maka akan menjlnkan juga session
+""" 
+kelebihan metode ini selain dpt menjlnkan client pd func test juga dpt menjlnkan session (operasi db) dg menjdkannya
+sebagai parameter. misal
+def test_root(client,session):
+    session.query(models.Post).all() #tambah operasi db ini
+    res = client.get("/")
+    assert res.json().get("message") == 'Hello World'
+    assert res.status_code == 200
+"""
 @pytest.fixture
-def client():
-    """blok kode ini akan run sblm TestClient"""
-    # buat tabel database
-    Base.metadata.create_all(bind=engine)
-    # command.upgrade("head")#jika memakai alembic
-    """ dg yield maka ini sprti pembatas kode sblm yield akan dieksekusi dulu kemudian yield dan terakhir kode stlh yield baru dieksekusi
-    jd alur run code-nya
-    1. jlnkan kode sblm yield
-    2. jlnkan kode yield
-    3. jlnkan kode setlah yield
-    pd kasus ini 
-    1. jlnkan buat tabel db
-    2. jlnkan TestClient untuk koneksi ke db dan melakukan operasi crud
-    3. jlnkan hapus tabel db
-    """
+def client(session):
+    # konek ke db untuk testing
+    def overrid_get_db():
+        try:
+            yield session
+        finally:
+            session.close()
+    app.dependency_overrides[get_db] = overrid_get_db
     yield TestClient(app)
-    # blok kode ini akan run stlh TestClient dijalankan
-    # hapus tabel database
-    Base.metadata.drop_all(bind=engine)
-    # command.downgrade("base")#jika memakai alembic
+
 
 def test_root(client):
     res = client.get("/")
