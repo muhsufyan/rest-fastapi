@@ -3,3 +3,5 @@ __pycache__/
 develop/
 .env
 ini_library.txt
+.pytest_cache
+**/__pycache__/
