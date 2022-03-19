@@ -72,3 +72,29 @@ jobs:
         run: python -m pip install --upgrade pip
       - name: install all dependencies
         run: pip install -r requirements.txt
+
+VERSI 3 : INSTALL PYTEST DAN TESTING
+
+name: Build and Deploy Code
+on: [push, pull_request]
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pulling git repo
+        uses: actions/checkout@v2
+      - name: install python version 3.9
+        # lewat ubuntu biasa 
+        # uses: sudo apt install python
+        # install python https://github.com/marketplace/actions/setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: update pip
+        run: python -m pip install --upgrade pip
+      - name: install all dependencies
+        run: pip install -r requirements.txt
+      - name: test with pytest
+        run:
+          pip install pytest
+          pytest
