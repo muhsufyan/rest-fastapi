@@ -7,4 +7,4 @@ jobs:
       - name: pulling git repo
         uses: actions/checkout@v2
       - name: hallo world
-        uses: echo "ini ditampilkan"
+        run: echo "ini ditampilkan"
