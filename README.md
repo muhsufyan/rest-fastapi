@@ -1,5 +1,4 @@
-## testing fitur vote
-DONE ALL FOR TESTING
+## cicd
 <ul>
-    
+    <li>cicd sederhana</li>
 </ul>
