@@ -10,7 +10,7 @@ name: Build and Deploy Code
 #   pull_request:
 #     branches:
 #     - "test_branch"
-on: [push. pull_request]
+on: [push, pull_request]
   # jlnkan pekerjaan(lakukan pekerjaan dibwh ini)
   job1: 
   # aplikasi berjln di ubuntu bersi terbaru
