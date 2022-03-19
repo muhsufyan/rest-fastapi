@@ -16,9 +16,9 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 from sqlalchemy_utils import database_exists, create_database
 if not database_exists(engine.url):
     create_database(engine.url)
-else:
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base = declarative_base()
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 # buat dependency agar terhub dan melakukan operasi pd model db melalui session. ini akan diimport 
 # Dependency
