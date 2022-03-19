@@ -1,17 +1,10 @@
 name: Build and Deploy Code
 on: [push, pull_request]
-# # environment variabel bisa juga di set disini
-# env:
-#   db_hostname=localhost
-#   db_port=5432
-#   db_name=fastapi
-#   db_username=root 
-#   db_pass=password
-#   jwt_secret_key=ini rahasia 
-#   jwt_algoritma=HS256
-#   jwt_expire=15
 jobs:
   job1:
+    # # environment variabel versi develop. untuk repo public
+    # environment:
+    #   name: develop
     # atur environment variabel
     env:
       db_hostname: ${{secrets.DB_HOSTNAME}}
@@ -22,6 +15,23 @@ jobs:
       jwt_secret_key: ${{secrets.JWT_SECRET_KEY}} 
       jwt_algoritma: ${{secrets.JWT_ALGORITMA}}
       jwt_expire: ${{secrets.JWT_EXPIRE}}
+    
+    # install service postgresql dlm container docker hub
+    # https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers
+    services:
+      postgres:
+        images: postgres
+        env:
+          POSTGRES_PASSWORD: ${{secrets.DB_PASS}}
+          POSTGRES_DB: ${{secrets.DB_NAME}}_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     runs-on: ubuntu-latest
     steps:
       - name: pulling git repo
