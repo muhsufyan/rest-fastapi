@@ -8,4 +8,3 @@ jobs:
         uses: actions/checkout@v2
       - name: hallo world
         uses: echo "ini ditampilkan"
-
