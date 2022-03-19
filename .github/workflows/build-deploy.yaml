@@ -1,7 +1,27 @@
 name: Build and Deploy Code
 on: [push, pull_request]
+# # environment variabel bisa juga di set disini
+# env:
+#   db_hostname=localhost
+#   db_port=5432
+#   db_name=fastapi
+#   db_username=root 
+#   db_pass=password
+#   jwt_secret_key=ini rahasia 
+#   jwt_algoritma=HS256
+#   jwt_expire=15
 jobs:
   job1:
+    # atur environment variabel
+    env:
+      db_hostname=localhost
+      db_port=5432
+      db_name=fastapi
+      db_username=root 
+      db_pass=password
+      jwt_secret_key=ini rahasia 
+      jwt_algoritma=HS256
+      jwt_expire=15
     runs-on: ubuntu-latest
     steps:
       - name: pulling git repo
@@ -18,7 +38,6 @@ jobs:
       - name: install all dependencies
         run: pip install -r requirements.txt
       - name: install pytest
-        run:
+        run: |
           pip install pytest
-      - name: test with pytest
-        run: pytest -v -s
+          pytest -v -s
