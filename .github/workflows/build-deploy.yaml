@@ -11,7 +11,9 @@ name: Build and Deploy Code
 #     branches:
 #     - "test_branch"
 on: [push, pull_request]
-  # jlnkan pekerjaan(lakukan pekerjaan dibwh ini)
+  # jlnkan pekerjaan pekerjaan(lakukan pekerjaan dibwh ini)
+jobs:
+# pekerjaan pertama
   job1: 
   # aplikasi berjln di ubuntu bersi terbaru
     runs-on: ubuntu-latest
