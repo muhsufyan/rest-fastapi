@@ -101,4 +101,53 @@ jobs:
         run: pytest -v -s
 
 HASLNYA ERROR, INI WAJAR KARENA KITA TDK SET DATABASE DAN ENVIRONMENT VARIABELNYA
-VERSI 4 : 
+VERSI 4 : SET ENVIRONMENT VARIABEL SAMA SPRTI .ENV
+
+name: Build and Deploy Code
+on: [push, pull_request]
+# # environment variabel bisa juga di set disini
+# env:
+#   db_hostname=localhost
+#   db_port=5432
+#   db_name=fastapi
+#   db_username=root 
+#   db_pass=password
+#   jwt_secret_key=ini rahasia 
+#   jwt_algoritma=HS256
+#   jwt_expire=15
+jobs:
+  job1:
+    # atur environment variabel
+    env:
+      db_hostname: localhost
+      db_port: 5432
+      db_name: fastapi
+      db_username: root 
+      db_pass: password
+      jwt_secret_key: ini rahasia 
+      jwt_algoritma: HS256
+      jwt_expire: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: pulling git repo
+        uses: actions/checkout@v2
+      - name: install python version 3.9
+        # lewat ubuntu biasa 
+        # uses: sudo apt install python
+        # install python https://github.com/marketplace/actions/setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: update pip
+        run: python -m pip install --upgrade pip
+      - name: install all dependencies
+        run: pip install -r requirements.txt
+      - name: install pytest
+        run: |
+          pip install pytest
+          pytest -v -s
+
+
+HASL VERSI 4 ERROR, INI WAJAR KARENA KITA SET ENVIRONMENT VARIABELNYA UNTUK LOKAL SEDANGKAN UNTUK GIT ACTION KITA HRS SET DULU
+ENVIRONMENT VARIABELNYA DI Settings=>Secrets=>Actions=>New repository secret=>masukkan key dan value untuk environment variabel
+VERSI 5 : SET ENVIRONMENT VARIABEL UNTUK DI GIT ACTION
