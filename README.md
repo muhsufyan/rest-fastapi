@@ -3,6 +3,7 @@
     <li>cicd sederhana</li>
 </ul>
 INI file .github/workflows/build-deploy.yaml
+VERSI 1 ERROR
 
 name: Build and Deploy Code
 # bisa push/pull/ keduanya [push, pull_request]
@@ -35,3 +36,16 @@ jobs:
         # langkah selanjutnya diberi nama
         - name: hallo ini adalah perintah untuk menampilkan dg echo
           run: echo "ini yang ditampilkan"
+
+VERSI 1 TDK ERROR
+
+name: Build and Deploy Code
+on: [push, pull_request]
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pulling git repo
+        uses: actions/checkout@v2
+      - name: hallo world
+        run: echo "ini ditampilkan"
