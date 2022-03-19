@@ -3,7 +3,7 @@ from sqlalchemy.sql.expression import text
 from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 # import file database.py yg telah kita buat sblmnya, dimana fungsi database.py tsb sbg konektor ke db
-from database import Base
+from .database import Base
 """
 setiap class merepresentasikan tabel
 setiap column dlm class merepresentasikan atribut dari tabel(classnya)
