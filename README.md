@@ -252,7 +252,7 @@ jobs:
     # https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers
     services:
       postgres:
-        images: postgres
+        image: postgres
         env:
           POSTGRES_PASSWORD: ${{secrets.DB_PASS}}
           POSTGRES_DB: ${{secrets.DB_NAME}}_test
